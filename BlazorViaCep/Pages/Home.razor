@@ -1,0 +1,56 @@
+﻿@page "/"
+@using BlazorViaCep.Models
+@using System.Text.Json;
+
+<PageTitle>Consulta CEP</PageTitle>
+
+<h1>Consulta CEP</h1>
+
+<div class="form-group mb-3">
+    <label for="cepInput" class="form-label">Digite o CEP:</label>
+    <input type="number" id="cepInput" class="form-control" @bind="cep" placeholder="Ex: 30130000" />
+</div>
+<button class="btn btn-primary" @onclick="ConsultarCep">Consultar</button>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger mt-3">@errorMessage</div>
+}
+else if (endereco != null)
+{
+    <div class="card mt-3">
+        <div class="card-body">
+            <h5 class="card-title">Endereço Encontrado</h5>
+            <p class="card-text"><strong>CEP:</strong> @endereco.Cep </p>
+            <p class="card-text"><strong>Logradouro:</strong> @endereco.Logradouro</p>
+            <p class="card-text"><strong>Bairro:</strong> @endereco.Bairro</p>
+            <p class="card-text"><strong>Cidade:</strong> @endereco.Localidade</p>
+            <p class="card-text"><strong>Estado:</strong> @endereco.Uf</p>
+        </div>
+    </div>
+}
+
+@code {
+    private string cep;
+    private Endereco endereco;
+    private string errorMessage;
+
+    private async Task ConsultarCep()
+    {
+        try
+        {
+            var httpClient = new HttpClient();
+            var response = await httpClient.GetAsync($"https://viacep.com.br/ws/{cep}/json/");
+            response.EnsureSuccessStatusCode();
+
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+            endereco = JsonSerializer.Deserialize<Endereco>(jsonResponse);
+            errorMessage = null;
+        }
+        catch (Exception ex)
+        {
+            endereco = null;
+            errorMessage = $"Erro ao consultar o CEP: {ex.Message}";
+        }
+    }
+}
